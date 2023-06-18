@@ -83,6 +83,14 @@ auto ExtendibleHashTable<K, V>::Remove(const K &key) -> bool {
 template <typename K, typename V>
 void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
   std::scoped_lock<std::mutex> lock(latch_);
+  // 这里用while的原因:
+  // 这里假设桶大小为1 如果第一个桶满了 那么要进行第一次分裂
+  // 第一次插入0 第二次插入2时 全局深度为1 第一个桶被0占用满了
+  // 进行第一扩容时 dir_[1]指向新的桶 但是2 不能插入 全局深度为2
+  // 所以要进行第二次扩容 全局深度变为3
+  // 2就能够被插入dir_[2]指向的桶中
+  // while循环进行是 判断dir_需不需要扩容 将满的桶分成两个新桶 并且重新分配指针
+  // 并不意味着新插入的元素能够顺利插入重新分配后的两个桶中
   while (dir_[IndexOf(key)]->IsFull()) {
     int index = IndexOf(key);
     std::shared_ptr<Bucket> origin_bucket = dir_[index];
