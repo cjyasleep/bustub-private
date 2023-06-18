@@ -83,7 +83,7 @@ auto ExtendibleHashTable<K, V>::Remove(const K &key) -> bool {
 template <typename K, typename V>
 void ExtendibleHashTable<K, V>::Insert(const K &key, const V &value) {
   std::scoped_lock<std::mutex> lock(latch_);
-  if (dir_[IndexOf(key)]->IsFull()) {
+  while (dir_[IndexOf(key)]->IsFull()) {
     int index = IndexOf(key);
     std::shared_ptr<Bucket> origin_bucket = dir_[index];
     if (origin_bucket->GetDepth() == GetGlobalDepthInternal()) {
