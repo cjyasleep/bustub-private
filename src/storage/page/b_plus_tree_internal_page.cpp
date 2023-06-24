@@ -25,27 +25,41 @@ namespace bustub {
  * max page size
  */
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, int max_size) {}
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::Init(page_id_t page_id, page_id_t parent_id, int max_size) {
+  SetPageType(IndexPageType::INTERNAL_PAGE);
+  SetPageId(page_id);
+  SetParentPageId(parent_id);
+  SetSize(0);
+  SetMaxSize(max_size);
+}
 /*
  * Helper method to get/set the key associated with input "index"(a.k.a
  * array offset)
  */
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const -> KeyType {
-  // replace with your own code
-  KeyType key{};
-  return key;
-}
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::KeyAt(int index) const -> KeyType { return array_[index].first; }
 
 INDEX_TEMPLATE_ARGUMENTS
-void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) {}
+void B_PLUS_TREE_INTERNAL_PAGE_TYPE::SetKeyAt(int index, const KeyType &key) { array_[index].first = key; }
 
 /*
  * Helper method to get the value associated with input "index"(a.k.a array
  * offset)
  */
 INDEX_TEMPLATE_ARGUMENTS
-auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const -> ValueType { return 0; }
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::ValueAt(int index) const -> ValueType { return array_[index].second; }
+
+INDEX_TEMPLATE_ARGUMENTS
+auto B_PLUS_TREE_INTERNAL_PAGE_TYPE::Lookup(const KeyType &key, const KeyComparator &comparator)
+    -> ValueType {
+  auto pos = std::lower_bound(array_ + 1, array_ + GetSize(), key,
+                           [&comparator](const auto &p, auto k) { return comparator(p.first, k) < 0; });
+  int index = std::distance(array_, pos);
+  if(comparator(key, array_[index].first) >= 0) {
+    return array_[index].second;
+  }
+  return array_[index - 1].second;
+}
 
 // valuetype for internalNode should be page id_t
 template class BPlusTreeInternalPage<GenericKey<4>, page_id_t, GenericComparator<4>>;
